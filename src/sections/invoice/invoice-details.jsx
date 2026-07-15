@@ -26,6 +26,37 @@ import { HOST_API } from 'src/config-global';
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
 
+const getNormalizedCustomSections = (invoiceOrCompany) => {
+  if (!invoiceOrCompany) return [];
+  if (invoiceOrCompany.customSections && invoiceOrCompany.customSections.length > 0) {
+    return invoiceOrCompany.customSections;
+  }
+  const sections = [];
+  if (invoiceOrCompany.notes) {
+    sections.push({
+      title: 'Notes',
+      content: [invoiceOrCompany.notes],
+    });
+  }
+  if (invoiceOrCompany.deliverables && invoiceOrCompany.deliverables.length > 0) {
+    sections.push({
+      title: 'Deliverables Included',
+      content: invoiceOrCompany.deliverables,
+    });
+  }
+  if (invoiceOrCompany.terms) {
+    const termItems = invoiceOrCompany.terms
+      .split(/<br\s*\/?>|\n/gi)
+      .map((t) => t.replace(/<\/?[^>]+(>|$)/g, '').trim())
+      .filter(Boolean);
+    sections.push({
+      title: 'Terms & Conditions',
+      content: termItems.length > 0 ? termItems : [invoiceOrCompany.terms],
+    });
+  }
+  return sections;
+};
+
 export default function InvoiceDetails({ invoice }) {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
@@ -317,13 +348,13 @@ export default function InvoiceDetails({ invoice }) {
           <Box sx={{ mb: 4 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9.5pt' }}>
               <thead>
-                <tr style={{ backgroundColor: '#0f172a', color: '#fff' }}>
-                  <th style={{ padding: '10px 12px', textAlign: 'left' }}>Description</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'center' }}>HSN</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'center' }}>Qty</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>Unit Price</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'center' }}>Taxes</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>Amount</th>
+                <tr style={{ borderTop: '1px solid #0f172a', borderBottom: '2px solid #0f172a', color: '#0f172a' }}>
+                  <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 700 }}>Description</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700 }}>HSN</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700 }}>Qty</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>Unit Price</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700 }}>Taxes</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>Amount</th>
                 </tr>
               </thead>
               <tbody>
@@ -395,24 +426,11 @@ export default function InvoiceDetails({ invoice }) {
                 </Box>
               )}
 
-              {/* Deliverables List */}
-              {invoice.deliverables && invoice.deliverables.length > 0 && (
-                <Box>
-                  <Typography fontSize="9pt" fontWeight={700} color="text.primary" sx={{ mb: 0.5 }}>
-                    Deliverables Included:
-                  </Typography>
-                  <ul style={{ margin: 0, paddingLeft: 20, fontSize: '9pt', color: '#64748b' }}>
-                    {invoice.deliverables.map((del, i) => (
-                      <li key={i}>{del}</li>
-                    ))}
-                  </ul>
-                </Box>
-              )}
             </Grid>
 
             {/* Aggregates calculations */}
             <Grid xs={12} sm={5}>
-              <table style={{ width: '100%', fontSize: '9.5pt' }}>
+              <table style={{ width: '100%', fontSize: '9.5pt', borderCollapse: 'collapse' }}>
                 <tbody>
                   <tr>
                     <td style={{ padding: '4px 0' }}>Subtotal (Taxable):</td>
@@ -461,23 +479,24 @@ export default function InvoiceDetails({ invoice }) {
             </Grid>
           </Grid>
 
-          {/* Notes & Terms bottom footer */}
-          <Box display="flex" justifyContent="space-between" alignItems="flex-end" sx={{ borderTop: '1px solid #e2e8f0', pt: 2, mt: 2 }}>
-            <div style={{ maxWidth: '60%', fontSize: '8.5pt', color: '#64748b' }}>
-              {invoice.notes && (
-                <div style={{ marginBottom: 10 }}>
-                  <strong style={{ color: '#334155' }}>Notes:</strong>
-                  <p style={{ margin: 0 }}>{invoice.notes}</p>
-                </div>
-              )}
-              {invoice.terms && (
-                <div>
-                  <strong style={{ color: '#334155' }}>Terms & Conditions:</strong>
-                  <div dangerouslySetInnerHTML={{ __html: invoice.terms }} />
-                </div>
-              )}
-            </div>
+          {/* Custom Sections (Note, Terms, Deliverables, etc.) */}
+          <Box sx={{ mt: 3 }}>
+            {getNormalizedCustomSections(invoice).filter(sec => sec.content && sec.content.length > 0).map((sec, idx) => (
+              <Box key={idx} sx={{ mt: 2, pageBreakInside: 'avoid' }}>
+                <Typography variant="subtitle2" sx={{ borderBottom: '1px solid #e2e8f0', pb: 0.5, mb: 1, fontWeight: 700, textTransform: 'uppercase', color: 'text.primary', fontSize: '9pt' }}>
+                  {sec.title}
+                </Typography>
+                <ul style={{ margin: 0, paddingLeft: 20, fontSize: '9pt', color: '#64748b', lineHeight: 1.6 }}>
+                  {sec.content.map((bullet, bulletIdx) => (
+                    <li key={bulletIdx} style={{ marginBottom: 4 }}>{bullet}</li>
+                  ))}
+                </ul>
+              </Box>
+            ))}
+          </Box>
 
+          {/* Signature bottom footer */}
+          <Box display="flex" justifyContent="flex-end" alignItems="flex-end" sx={{ borderTop: '1px solid #e2e8f0', pt: 2, mt: 4, pageBreakInside: 'avoid' }}>
             <div style={{ textAlign: 'right' }}>
               {invoice.company?.signature && (
                 <img
@@ -498,9 +517,24 @@ export default function InvoiceDetails({ invoice }) {
             justifyContent="space-between"
             sx={{ borderTop: '1px solid #e2e8f0', pt: 1.5, mt: 4, fontSize: '8.5pt', color: '#94a3b8' }}
           >
-            <div>{invoice.company?.website && `Website: ${invoice.company.website}`}</div>
-            <div>{invoice.company?.phone && `Phone: ${invoice.company.phone}`}</div>
-            <div>{invoice.company?.email && `Email: ${invoice.company.email}`}</div>
+            {invoice.company?.website && (
+              <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
+                <Iconify icon="solar:global-bold" width={16} sx={{ mr: 0.5 }} />
+                <span>{invoice.company.website}</span>
+              </Box>
+            )}
+            {invoice.company?.phone && (
+              <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
+                <Iconify icon="solar:phone-bold" width={16} sx={{ mr: 0.5 }} />
+                <span>{invoice.company.phone}</span>
+              </Box>
+            )}
+            {invoice.company?.email && (
+              <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
+                <Iconify icon="solar:letter-bold" width={16} sx={{ mr: 0.5 }} />
+                <span>{invoice.company.email}</span>
+              </Box>
+            )}
           </Box>
 
         </div>

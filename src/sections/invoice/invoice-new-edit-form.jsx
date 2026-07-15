@@ -7,15 +7,12 @@ import {
   Box,
   Card,
   Grid,
-  List,
   Stack,
   Button,
   MenuItem,
-  ListItem,
   TextField,
   Typography,
   IconButton,
-  ListItemText,
   CircularProgress,
 } from '@mui/material';
 
@@ -30,6 +27,37 @@ import { useSnackbar } from 'src/components/snackbar';
 
 const STATUS_OPTIONS = ['draft', 'pending', 'paid', 'cancelled'];
 const TAX_RATES = [0, 5, 9, 12, 18, 28];
+
+const getNormalizedCustomSections = (invoiceOrCompany) => {
+  if (!invoiceOrCompany) return [];
+  if (invoiceOrCompany.customSections && invoiceOrCompany.customSections.length > 0) {
+    return invoiceOrCompany.customSections;
+  }
+  const sections = [];
+  if (invoiceOrCompany.notes) {
+    sections.push({
+      title: 'Notes',
+      content: [invoiceOrCompany.notes],
+    });
+  }
+  if (invoiceOrCompany.deliverables && invoiceOrCompany.deliverables.length > 0) {
+    sections.push({
+      title: 'Deliverables Included',
+      content: invoiceOrCompany.deliverables,
+    });
+  }
+  if (invoiceOrCompany.terms) {
+    const termItems = invoiceOrCompany.terms
+      .split(/<br\s*\/?>|\n/gi)
+      .map((t) => t.replace(/<\/?[^>]+(>|$)/g, '').trim())
+      .filter(Boolean);
+    sections.push({
+      title: 'Terms & Conditions',
+      content: termItems.length > 0 ? termItems : [invoiceOrCompany.terms],
+    });
+  }
+  return sections;
+};
 
 export default function InvoiceNewEditForm({ currentInvoice }) {
   const navigate = useNavigate();
@@ -50,7 +78,7 @@ export default function InvoiceNewEditForm({ currentInvoice }) {
   const [notes, setNotes] = useState('');
   const [terms, setTerms] = useState('');
   const [deliverables, setDeliverables] = useState([]);
-  const [newDeliverable, setNewDeliverable] = useState('');
+  const [customSections, setCustomSections] = useState([]);
   const [items, setItems] = useState([
     {
       description: '',
@@ -88,6 +116,7 @@ export default function InvoiceNewEditForm({ currentInvoice }) {
           setNotes(currentInvoice.notes || '');
           setTerms(currentInvoice.terms || '');
           setDeliverables(currentInvoice.deliverables || []);
+          setCustomSections(getNormalizedCustomSections(currentInvoice));
           setItems(
             currentInvoice.products.map((p) => ({
               description: p.description,
@@ -100,6 +129,8 @@ export default function InvoiceNewEditForm({ currentInvoice }) {
               discountRate: p.discountRate || 0,
             }))
           );
+        } else if (compRes.data) {
+          setCustomSections(compRes.data.customSections || []);
         }
       } catch (error) {
         console.error('Failed to load invoice deps:', error);
@@ -182,18 +213,7 @@ export default function InvoiceNewEditForm({ currentInvoice }) {
     }
   };
 
-  // Handle adding deliverable
-  const handleAddDeliverable = () => {
-    if (newDeliverable.trim()) {
-      setDeliverables((prev) => [...prev, newDeliverable.trim()]);
-      setNewDeliverable('');
-    }
-  };
 
-  // Handle removing deliverable
-  const handleRemoveDeliverable = (index) => {
-    setDeliverables((prev) => prev.filter((_, idx) => idx !== index));
-  };
 
   // Math Calculations (instant live sync)
   const totals = useMemo(() => {
@@ -265,6 +285,7 @@ export default function InvoiceNewEditForm({ currentInvoice }) {
       notes,
       terms,
       deliverables,
+      customSections,
       products: items,
     };
 
@@ -508,68 +529,7 @@ export default function InvoiceNewEditForm({ currentInvoice }) {
             </Stack>
           </Card>
 
-          {/* Section 3: Payment, Terms & Deliverables */}
-          <Card sx={{ p: 3, borderRadius: 2 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Notes, Terms & Deliverables
-            </Typography>
-
-            <Stack spacing={3}>
-              {/* Deliverables Input */}
-              <Box>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>Deliverables</Typography>
-                <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-                  <TextField
-                    placeholder="e.g. Website Mockup Figma Link"
-                    value={newDeliverable}
-                    onChange={(e) => setNewDeliverable(e.target.value)}
-                    fullWidth
-                    size="small"
-                  />
-                  <Button variant="contained" onClick={handleAddDeliverable}>Add</Button>
-                </Stack>
-                
-                {deliverables.length > 0 && (
-                  <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1 }}>
-                    <List dense>
-                      {deliverables.map((del, idx) => (
-                        <ListItem
-                          key={idx}
-                          secondaryAction={
-                            <IconButton edge="end" size="small" color="error" onClick={() => handleRemoveDeliverable(idx)}>
-                              <Iconify icon="solar:trash-bin-trash-bold" width={16} />
-                            </IconButton>
-                          }
-                        >
-                          <ListItemText primary={del} />
-                        </ListItem>
-                      ))}
-                    </List>
-                  </Box>
-                )}
-              </Box>
-
-              <TextField
-                label="Invoice Notes"
-                multiline
-                rows={3}
-                placeholder="Any special remarks or payment instructions for the client..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                fullWidth
-              />
-
-              <TextField
-                label="Terms & Conditions (Rich Text Support)"
-                multiline
-                rows={4}
-                placeholder="e.g. 1. Goods once sold will not be taken back.<br/>2. Subject to local jurisdiction."
-                value={terms}
-                onChange={(e) => setTerms(e.target.value)}
-                fullWidth
-              />
-            </Stack>
-          </Card>
+          {/* Notes, Terms & Deliverables are now fully static and fetched from your Company settings */}
 
           {/* Actions */}
           <Stack direction="row" justifyContent="flex-end" spacing={2}>
@@ -662,13 +622,13 @@ export default function InvoiceNewEditForm({ currentInvoice }) {
               <Box sx={{ mb: 2 }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8pt' }}>
                   <thead>
-                    <tr style={{ backgroundColor: '#0f172a', color: '#fff' }}>
-                      <th style={{ padding: 6, textAlign: 'left' }}>Description</th>
-                      <th style={{ padding: 6, textAlign: 'center' }}>HSN</th>
-                      <th style={{ padding: 6, textAlign: 'center' }}>Qty</th>
-                      <th style={{ padding: 6, textAlign: 'right' }}>Price</th>
-                      <th style={{ padding: 6, textAlign: 'center' }}>Taxes</th>
-                      <th style={{ padding: 6, textAlign: 'right' }}>Total</th>
+                    <tr style={{ borderTop: '1px solid #0f172a', borderBottom: '2px solid #0f172a', color: '#0f172a' }}>
+                      <th style={{ padding: '6px 4px', textAlign: 'left', fontWeight: 700 }}>Description</th>
+                      <th style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 700 }}>HSN</th>
+                      <th style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 700 }}>Qty</th>
+                      <th style={{ padding: '6px 4px', textAlign: 'right', fontWeight: 700 }}>Price</th>
+                      <th style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 700 }}>Taxes</th>
+                      <th style={{ padding: '6px 4px', textAlign: 'right', fontWeight: 700 }}>Total</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -679,12 +639,12 @@ export default function InvoiceNewEditForm({ currentInvoice }) {
                       if (it.igstRate) taxArr.push(`I:${it.igstRate}%`);
                       return (
                         <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                          <td style={{ padding: 6 }}>{it.description || 'Description'}</td>
-                          <td style={{ padding: 6, textAlign: 'center' }}>{it.hsn || '-'}</td>
-                          <td style={{ padding: 6, textAlign: 'center' }}>{it.quantity}</td>
-                          <td style={{ padding: 6, textAlign: 'right' }}>{it.unitPrice}</td>
-                          <td style={{ padding: 6, textAlign: 'center' }}>{taxArr.join(', ') || '0%'}</td>
-                          <td style={{ padding: 6, textAlign: 'right', fontWeight: 600 }}>{it.amount}</td>
+                          <td style={{ padding: '6px 4px' }}>{it.description || 'Description'}</td>
+                          <td style={{ padding: '6px 4px', textAlign: 'center' }}>{it.hsn || '-'}</td>
+                          <td style={{ padding: '6px 4px', textAlign: 'center' }}>{it.quantity}</td>
+                          <td style={{ padding: '6px 4px', textAlign: 'right' }}>{it.unitPrice}</td>
+                          <td style={{ padding: '6px 4px', textAlign: 'center' }}>{taxArr.join(', ') || '0%'}</td>
+                          <td style={{ padding: '6px 4px', textAlign: 'right', fontWeight: 600 }}>{it.amount}</td>
                         </tr>
                       );
                     })}
@@ -758,18 +718,16 @@ export default function InvoiceNewEditForm({ currentInvoice }) {
               {/* Notes & Signatures */}
               <Box display="grid" gridTemplateColumns="1.2fr 0.8fr" gap={2} sx={{ borderTop: '1px solid #e2e8f0', pt: 1 }}>
                 <div style={{ fontSize: '7.5pt' }}>
-                  {notes && (
-                    <>
-                      <strong>Notes:</strong>
-                      <p style={{ margin: 0, color: '#64748b' }}>{notes}</p>
-                    </>
-                  )}
-                  {terms && (
-                    <Box sx={{ mt: 1 }}>
-                      <strong>Terms & Conditions:</strong>
-                      <div style={{ color: '#64748b', fontSize: '7pt' }} dangerouslySetInnerHTML={{ __html: terms }} />
+                  {customSections.filter(sec => sec.content && sec.content.length > 0).map((sec, idx) => (
+                    <Box key={idx} sx={{ mt: idx === 0 ? 0 : 1.5 }}>
+                      <strong>{sec.title}</strong>
+                      <ul style={{ margin: '2px 0 0 0', paddingLeft: 12, color: '#64748b', fontSize: '7pt', lineHeight: 1.4 }}>
+                        {sec.content.map((bullet, bulletIdx) => (
+                          <li key={bulletIdx} style={{ marginBottom: 1 }}>{bullet}</li>
+                        ))}
+                      </ul>
                     </Box>
-                  )}
+                  ))}
                 </div>
                 <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'flex-end' }}>
                   {company?.signature && (

@@ -23,6 +23,8 @@ import axios from 'src/utils/axios';
 
 import { HOST_API } from 'src/config-global';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
 
@@ -60,6 +62,7 @@ const getNormalizedCustomSections = (invoiceOrCompany) => {
 export default function InvoiceDetails({ invoice }) {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const { refresh } = useAuthContext();
 
   const [status, setStatus] = useState(invoice.status);
   const [submitting, setSubmitting] = useState(false);
@@ -85,6 +88,7 @@ export default function InvoiceDetails({ invoice }) {
     try {
       setSubmitting(true);
       await axios.post(`/api/invoice/${invoice._id}/duplicate`);
+      await refresh();
       enqueueSnackbar('Invoice duplicated successfully', { variant: 'success' });
       navigate(paths.dashboard.invoice.root);
     } catch (error) {

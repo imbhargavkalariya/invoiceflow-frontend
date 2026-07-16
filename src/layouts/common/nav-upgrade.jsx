@@ -2,10 +2,11 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
-import { alpha } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import { alpha } from '@mui/material/styles';
 
+import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -14,20 +15,19 @@ import { useMockedUser } from 'src/hooks/use-mocked-user';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
-import { useSnackbar } from 'src/components/snackbar';
+import Label from 'src/components/label';
 import { ConfirmDialog } from 'src/components/custom-dialog';
+import { useSnackbar } from 'src/components/snackbar';
 
 // ----------------------------------------------------------------------
 
 export default function NavUpgrade() {
   const { user: authUser, logout } = useAuthContext();
-
   const { user: mockUser } = useMockedUser();
 
   const user = authUser || mockUser;
 
   const router = useRouter();
-
   const { enqueueSnackbar } = useSnackbar();
 
   const confirmLogout = useBoolean();
@@ -49,36 +49,86 @@ export default function NavUpgrade() {
         sx={{
           px: 2,
           py: 3,
+          textAlign: 'center',
         }}
       >
         <Stack
-          direction="row"
           alignItems="center"
-          spacing={1.5}
           sx={{
-            p: 1.5,
-            borderRadius: 1.5,
+            p: 2,
+            borderRadius: 2,
             bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-            border: (theme) => `solid 1px ${alpha(theme.palette.grey[500], 0.12)}`,
+            border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.12)}`,
           }}
         >
-          <Avatar src={user?.photoURL} alt={user?.displayName} sx={{ width: 40, height: 40 }}>
-            {(user?.displayName || user?.firstName || 'U').charAt(0).toUpperCase()}
-          </Avatar>
+          <Box sx={{ position: 'relative' }}>
+            <Avatar
+              src={user?.photoURL}
+              alt={user?.displayName}
+              sx={{ width: 56, height: 56 }}
+            >
+              {(user?.displayName || user?.firstName || 'U')
+                .charAt(0)
+                .toUpperCase()}
+            </Avatar>
 
-          <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-            <Typography variant="subtitle2" noWrap sx={{ color: 'text.primary' }}>
-              {user?.displayName || `${user?.firstName || ''} ${user?.lastName || ''}`}
-            </Typography>
-
-            <Typography variant="body2" noWrap sx={{ color: 'text.disabled', typography: 'caption' }}>
-              {user?.email}
-            </Typography>
+            <Label
+              color="success"
+              variant="filled"
+              sx={{
+                top: -6,
+                px: 0.5,
+                left: 46,
+                height: 20,
+                position: 'absolute',
+                borderBottomLeftRadius: 2,
+              }}
+            >
+              Active
+            </Label>
           </Box>
 
-          <IconButton color="error" onClick={confirmLogout.onTrue} sx={{ p: 0.75 }}>
-            <Iconify icon="solar:power-bold" width={20} />
-          </IconButton>
+          <Stack spacing={0.5} sx={{ mt: 2, mb: 2, width: 1 }}>
+            <Typography variant="subtitle2" noWrap>
+              {user?.displayName ||
+                `${user?.firstName || ''} ${user?.lastName || ''}`}
+            </Typography>
+
+            <Typography
+              variant="body2"
+              noWrap
+              sx={{ color: 'text.disabled' }}
+            >
+              {user?.email}
+            </Typography>
+          </Stack>
+
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            sx={{ width: 1 }}
+          >
+            <Button
+              fullWidth
+              variant="contained"
+              color="inherit"
+              onClick={() => router.push(paths.dashboard.user.profile)}
+            >
+              Profile
+            </Button>
+
+            <IconButton
+              color="error"
+              onClick={confirmLogout.onTrue}
+              sx={{
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                borderRadius: 1.5,
+              }}
+            >
+              <Iconify icon="solar:power-bold" width={20} />
+            </IconButton>
+          </Stack>
         </Stack>
       </Stack>
 

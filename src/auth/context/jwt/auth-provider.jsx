@@ -156,6 +156,26 @@ export function AuthProvider({ children }) {
     window.location.href = '/';
   }, []);
 
+  // REFRESH
+  const refresh = useCallback(async () => {
+    try {
+      const response = await axios.get(endpoints.auth.me);
+      const { user } = response.data;
+      const accessToken = sessionStorage.getItem(STORAGE_KEY);
+      dispatch({
+        type: 'INITIAL',
+        payload: {
+          user: {
+            ...user,
+            accessToken,
+          },
+        },
+      });
+    } catch (error) {
+      console.error('Failed to refresh user context:', error);
+    }
+  }, []);
+
   // ----------------------------------------------------------------------
 
   const checkAuthenticated = state.user ? 'authenticated' : 'unauthenticated';
@@ -173,8 +193,9 @@ export function AuthProvider({ children }) {
       login,
       register,
       logout,
+      refresh,
     }),
-    [login, logout, register, state.user, status]
+    [login, logout, register, state.user, status, refresh]
   );
 
   return <AuthContext.Provider value={memoizedValue}>{children}</AuthContext.Provider>;

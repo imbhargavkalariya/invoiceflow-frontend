@@ -22,6 +22,8 @@ import axios from 'src/utils/axios';
 
 import { HOST_API } from 'src/config-global';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
 
@@ -62,6 +64,7 @@ const getNormalizedCustomSections = (invoiceOrCompany) => {
 export default function InvoiceNewEditForm({ currentInvoice }) {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const { refresh } = useAuthContext();
 
   // Async data states
   const [customers, setCustomers] = useState([]);
@@ -296,6 +299,7 @@ export default function InvoiceNewEditForm({ currentInvoice }) {
         enqueueSnackbar('Invoice updated successfully', { variant: 'success' });
       } else {
         await axios.post('/api/invoice', payload);
+        await refresh();
         enqueueSnackbar('Invoice created successfully', { variant: 'success' });
       }
       navigate(paths.dashboard.invoice.root);

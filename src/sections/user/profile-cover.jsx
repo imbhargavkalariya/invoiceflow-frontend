@@ -36,12 +36,15 @@ export default function ProfileCover({ name, avatarUrl, role, coverUrl }) {
       >
         <Avatar
           alt={name}
-          src={avatarUrl}
           sx={{
             mx: 'auto',
             width: { xs: 64, md: 128 },
             height: { xs: 64, md: 128 },
             border: `solid 2px ${theme.palette.common.white}`,
+            bgcolor: alpha(theme.palette.common.black, 1),
+            color: 'common.white',
+            fontSize: { xs: '2rem', md: '4rem' },
+            fontWeight: 'bold',
           }}
         >
           {name?.charAt(0).toUpperCase()}
@@ -54,16 +57,8 @@ export default function ProfileCover({ name, avatarUrl, role, coverUrl }) {
             textAlign: { xs: 'center', md: 'unset' },
           }}
           primary={name}
-          secondary={role}
           primaryTypographyProps={{
             typography: 'h4',
-          }}
-          secondaryTypographyProps={{
-            mt: 0.5,
-            color: 'inherit',
-            component: 'span',
-            typography: 'body2',
-            sx: { opacity: 0.48 },
           }}
         />
       </Stack>

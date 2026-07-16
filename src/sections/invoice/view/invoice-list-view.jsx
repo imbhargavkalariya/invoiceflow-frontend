@@ -26,10 +26,14 @@ import {
   Stack,
   Divider,
 } from '@mui/material';
+import { paths } from 'src/routes/paths';
+
+import axios from 'src/utils/axios';
+
+import { useAuthContext } from 'src/auth/hooks';
+
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
-import { paths } from 'src/routes/paths';
-import axios from 'src/utils/axios';
 import { useSnackbar } from 'src/components/snackbar';
 import InvoiceAnalytic from '../invoice-analytic';
 
@@ -44,6 +48,7 @@ const TIMEFRAME_OPTIONS = [
 export default function InvoiceListView() {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const { refresh } = useAuthContext();
 
   // Data states
   const [invoices, setInvoices] = useState([]);
@@ -143,6 +148,7 @@ export default function InvoiceListView() {
     try {
       enqueueSnackbar('Duplicating invoice...', { variant: 'info' });
       await axios.post(`/api/invoice/${id}/duplicate`);
+      await refresh();
       enqueueSnackbar('Invoice duplicated successfully', { variant: 'success' });
       fetchInvoices();
       fetchStats();

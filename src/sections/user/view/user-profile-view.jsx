@@ -9,40 +9,28 @@ import { paths } from 'src/routes/paths';
 
 import { useMockedUser } from 'src/hooks/use-mocked-user';
 
-import { _userAbout, _userFeeds, _userFriends, _userGallery, _userFollowers } from 'src/_mock';
+import { _userAbout } from 'src/_mock';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
-import ProfileHome from '../profile-home';
 import ProfileCover from '../profile-cover';
-import ProfileFriends from '../profile-friends';
-import ProfileGallery from '../profile-gallery';
-import ProfileFollowers from '../profile-followers';
+import ProfileWallet from '../profile-wallet';
+import ProfileChangePassword from '../profile-change-password';
 
 // ----------------------------------------------------------------------
 
 const TABS = [
   {
-    value: 'profile',
-    label: 'Profile',
-    icon: <Iconify icon="solar:user-id-bold" width={24} />,
+    value: 'wallet',
+    label: 'Wallet',
+    icon: <Iconify icon="solar:wallet-bold" width={24} />,
   },
   {
-    value: 'followers',
-    label: 'Followers',
-    icon: <Iconify icon="solar:heart-bold" width={24} />,
-  },
-  {
-    value: 'friends',
-    label: 'Friends',
-    icon: <Iconify icon="solar:users-group-rounded-bold" width={24} />,
-  },
-  {
-    value: 'gallery',
-    label: 'Gallery',
-    icon: <Iconify icon="solar:gallery-wide-bold" width={24} />,
+    value: 'change_password',
+    label: 'Change Password',
+    icon: <Iconify icon="solar:key-bold" width={24} />,
   },
 ];
 
@@ -53,16 +41,10 @@ export default function UserProfileView() {
 
   const { user } = useMockedUser();
 
-  const [searchFriends, setSearchFriends] = useState('');
-
-  const [currentTab, setCurrentTab] = useState('profile');
+  const [currentTab, setCurrentTab] = useState('wallet');
 
   const handleChangeTab = useCallback((event, newValue) => {
     setCurrentTab(newValue);
-  }, []);
-
-  const handleSearchFriends = useCallback((event) => {
-    setSearchFriends(event.target.value);
   }, []);
 
   return (
@@ -116,19 +98,9 @@ export default function UserProfileView() {
         </Tabs>
       </Card>
 
-      {currentTab === 'profile' && <ProfileHome info={_userAbout} posts={_userFeeds} />}
+      {currentTab === 'wallet' && <ProfileWallet />}
 
-      {currentTab === 'followers' && <ProfileFollowers followers={_userFollowers} />}
-
-      {currentTab === 'friends' && (
-        <ProfileFriends
-          friends={_userFriends}
-          searchFriends={searchFriends}
-          onSearchFriends={handleSearchFriends}
-        />
-      )}
-
-      {currentTab === 'gallery' && <ProfileGallery gallery={_userGallery} />}
+      {currentTab === 'change_password' && <ProfileChangePassword />}
     </Container>
   );
 }
